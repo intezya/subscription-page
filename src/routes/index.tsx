@@ -404,6 +404,155 @@ function IconButton({
   );
 }
 
+function CopyIconButton() {
+  const [copied, setCopied] = useState(false);
+  const onClick = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(SUBSCRIPTION_URL);
+    }
+    toast.success("Ссылка скопирована");
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  };
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Скопировать ссылку подписки"
+      className="group relative grid size-10 place-items-center overflow-hidden rounded-full border border-white/10 bg-white/5 text-foreground transition-all duration-300 hover:scale-105 hover:border-white/25 hover:bg-white/10 hover:glow-soft active:scale-95"
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {copied ? (
+          <motion.span
+            key="check"
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ duration: 0.18 }}
+            className="absolute inset-0 grid place-items-center"
+          >
+            <Check className="size-[18px]" />
+          </motion.span>
+        ) : (
+          <motion.span
+            key="link"
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ duration: 0.18 }}
+            className="absolute inset-0 grid place-items-center"
+          >
+            <Link2 className="size-[18px]" />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+}
+
+function PageSkeleton() {
+  return (
+    <div aria-hidden className="space-y-12">
+      <div className="h-[88px] rounded-3xl skeleton" />
+      <div className="space-y-6">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+          <div className="h-7 w-32 rounded-md skeleton" />
+          <div className="h-9 w-32 rounded-full skeleton" />
+        </div>
+        <div className="h-10 w-56 rounded-full skeleton" />
+        <div className="space-y-8 pt-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex gap-5">
+              <div className="size-9 shrink-0 rounded-full skeleton" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-2/5 rounded-md skeleton" />
+                <div className="h-3 w-3/4 rounded-md skeleton" />
+                <div className="h-9 w-40 rounded-full skeleton" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeepLinkButton({
+  href,
+  children,
+  icon,
+}: {
+  href: string;
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+}) {
+  const [showFallback, setShowFallback] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const onClick = () => {
+    setShowFallback(false);
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden" && timerRef.current) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility, { once: true });
+    timerRef.current = window.setTimeout(() => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      setShowFallback(true);
+      timerRef.current = null;
+    }, 1800);
+  };
+
+  return (
+    <div className="space-y-3">
+      <a
+        href={href}
+        onClick={onClick}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all duration-300 hover:scale-[1.02] hover:glow-strong active:scale-[0.98] sm:w-auto"
+      >
+        {icon}
+        {children}
+      </a>
+      <AnimatePresence>
+        {showFallback && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.25 }}
+            className="flex flex-col items-start gap-2 rounded-2xl border border-amber-300/20 bg-amber-300/[0.04] p-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:gap-3"
+          >
+            <span className="inline-flex items-center gap-2 text-amber-200/90">
+              <AlertCircle className="size-4 shrink-0" />
+              Не открылось? Похоже, приложение ещё не установлено.
+            </span>
+            <button
+              onClick={() => {
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  navigator.clipboard.writeText(SUBSCRIPTION_URL);
+                }
+                toast.success("Ссылка скопирована");
+              }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-foreground transition-colors hover:border-white/25 hover:bg-white/10"
+            >
+              <Copy className="size-3.5" />
+              Скопировать ссылку
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function Field({
   label,
   value,
