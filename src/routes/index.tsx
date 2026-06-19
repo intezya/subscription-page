@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield,
@@ -13,6 +13,7 @@ import {
   Apple,
   Monitor,
   Smartphone,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -68,10 +69,19 @@ function Index() {
   const [lang, setLang] = useState(LANGS[0]);
   const [osOpen, setOsOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoaded(true), 700);
+    return () => clearTimeout(t);
+  }, []);
 
   const usedGiB = 1.35;
   const totalGiB = 10;
   const usedPct = (usedGiB / totalGiB) * 100;
+  const resetDate = "02.07.2026";
+  const tone: "ok" | "warn" | "danger" =
+    usedPct >= 95 ? "danger" : usedPct >= 80 ? "warn" : "ok";
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -94,26 +104,24 @@ function Index() {
         }}
       />
 
-      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col px-5 pb-32 pt-8 sm:px-8">
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col px-4 pb-32 pt-6 sm:px-8 sm:pt-8">
         {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="mb-10 flex items-center justify-between"
+          className="mb-8 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:mb-10"
         >
-          <div className="flex items-center gap-3">
-            <div className="grid size-10 place-items-center rounded-2xl border border-white/10 bg-white/5 glow-soft">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid size-10 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/5 glow-soft">
               <Shield className="size-5" />
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
               Subscription
             </h1>
           </div>
-          <div className="flex items-center gap-2">
-            <IconButton onClick={copyLink} ariaLabel="Скопировать ссылку подписки">
-              <Link2 className="size-[18px]" />
-            </IconButton>
+          <div className="flex shrink-0 items-center gap-2">
+            <CopyIconButton />
             <IconButton
               ariaLabel="Поддержка в Telegram"
               asLink
@@ -124,6 +132,10 @@ function Index() {
           </div>
         </motion.header>
 
+        {!loaded && <PageSkeleton />}
+
+        {loaded && (
+          <>
         {/* Subscription card */}
         <motion.section
           initial={{ opacity: 0, y: 12 }}
@@ -133,17 +145,19 @@ function Index() {
         >
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="flex w-full items-center justify-between gap-4 p-6 text-left"
+            aria-expanded={expanded}
+            aria-controls="subscription-details"
+            className="flex w-full items-center justify-between gap-4 p-5 text-left sm:p-6"
           >
-            <div className="flex items-center gap-4">
-              <span className="relative grid size-3 place-items-center">
+            <div className="flex min-w-0 items-center gap-4">
+              <span className="relative grid size-3 shrink-0 place-items-center">
                 <span className="absolute inset-0 rounded-full bg-white pulse-glow" />
               </span>
-              <div>
-                <div className="text-base font-medium tracking-tight">
+              <div className="min-w-0">
+                <div className="truncate text-base font-medium tracking-tight">
                   intezya
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="truncate text-sm text-muted-foreground">
                   Истекает через 7 месяцев
                 </div>
               </div>
@@ -151,7 +165,7 @@ function Index() {
             <motion.div
               animate={{ rotate: expanded ? 180 : 0 }}
               transition={{ duration: 0.3 }}
-              className="text-muted-foreground"
+              className="shrink-0 text-muted-foreground"
             >
               <ChevronDown className="size-5" />
             </motion.div>
@@ -161,13 +175,14 @@ function Index() {
             {expanded && (
               <motion.div
                 key="details"
+                id="subscription-details"
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
                 className="overflow-hidden"
               >
-                <div className="border-t border-white/10 px-6 py-5">
+                <div className="border-t border-white/10 px-5 py-5 sm:px-6">
                   <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
                     <Field label="Пользователь" value="intezya" />
                     <Field
@@ -183,7 +198,12 @@ function Index() {
                   </div>
                   <div className="mt-6">
                     <div className="mb-2 flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Трафик</span>
+                      <span className="text-muted-foreground">
+                        Трафик
+                        <span className="ml-2 text-xs text-muted-foreground/70">
+                          сброс {resetDate}
+                        </span>
+                      </span>
                       <span className="tabular-nums">
                         <span className="text-foreground">{usedGiB.toFixed(2)} GiB</span>
                         <span className="text-muted-foreground"> / {totalGiB.toFixed(2)} GiB</span>
@@ -194,10 +214,29 @@ function Index() {
                         initial={{ width: 0 }}
                         animate={{ width: `${usedPct}%` }}
                         transition={{ duration: 0.9, ease: [0.4, 0, 0.2, 1] }}
-                        className="h-full rounded-full bg-white"
-                        style={{ boxShadow: "0 0 12px rgba(255,255,255,0.6)" }}
+                        className={cn(
+                          "h-full rounded-full transition-colors duration-500",
+                          tone === "ok" && "bg-white",
+                          tone === "warn" && "bg-amber-300",
+                          tone === "danger" && "bg-rose-400",
+                        )}
+                        style={{
+                          boxShadow:
+                            tone === "ok"
+                              ? "0 0 12px rgba(255,255,255,0.6)"
+                              : tone === "warn"
+                                ? "0 0 12px rgba(252,211,77,0.55)"
+                                : "0 0 12px rgba(251,113,133,0.6)",
+                        }}
                       />
                     </div>
+                    {tone !== "ok" && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {tone === "warn"
+                          ? "Использовано более 80% квоты — следите за расходом."
+                          : "Квота почти исчерпана — трафик скоро закончится."}
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -212,11 +251,11 @@ function Index() {
           transition={{ duration: 0.5, delay: 0.12 }}
           className="mt-12"
         >
-          <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:gap-4">
             <h2 className="text-xl font-semibold tracking-tight">Установка</h2>
             <Popover open={osOpen} onOpenChange={setOsOpen}>
               <PopoverTrigger asChild>
-                <button className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm transition-all duration-300 hover:border-white/25 hover:bg-white/10 hover:glow-soft">
+                <button className="group inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm transition-all duration-300 hover:border-white/25 hover:bg-white/10 hover:glow-soft sm:px-4">
                   {OS_OPTIONS.find((o) => o.id === os)?.icon}
                   <span>{OS_OPTIONS.find((o) => o.id === os)?.label}</span>
                   <ChevronDown
@@ -279,7 +318,7 @@ function Index() {
         </motion.section>
 
         {/* Language pill */}
-        <div className="mt-16 flex justify-center">
+        <div className="mt-14 flex justify-center sm:mt-16">
           <Popover open={langOpen} onOpenChange={setLangOpen}>
             <PopoverTrigger asChild>
               <button className="inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm transition-all duration-300 hover:border-white/25 hover:bg-white/10 hover:glow-soft">
@@ -323,6 +362,8 @@ function Index() {
             </PopoverContent>
           </Popover>
         </div>
+          </>
+        )}
       </main>
     </div>
   );
@@ -360,6 +401,155 @@ function IconButton({
     <button onClick={onClick} aria-label={ariaLabel} className={cls}>
       {children}
     </button>
+  );
+}
+
+function CopyIconButton() {
+  const [copied, setCopied] = useState(false);
+  const onClick = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(SUBSCRIPTION_URL);
+    }
+    toast.success("Ссылка скопирована");
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  };
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Скопировать ссылку подписки"
+      className="group relative grid size-10 place-items-center overflow-hidden rounded-full border border-white/10 bg-white/5 text-foreground transition-all duration-300 hover:scale-105 hover:border-white/25 hover:bg-white/10 hover:glow-soft active:scale-95"
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        {copied ? (
+          <motion.span
+            key="check"
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ duration: 0.18 }}
+            className="absolute inset-0 grid place-items-center"
+          >
+            <Check className="size-[18px]" />
+          </motion.span>
+        ) : (
+          <motion.span
+            key="link"
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ duration: 0.18 }}
+            className="absolute inset-0 grid place-items-center"
+          >
+            <Link2 className="size-[18px]" />
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </button>
+  );
+}
+
+function PageSkeleton() {
+  return (
+    <div aria-hidden className="space-y-12">
+      <div className="h-[88px] rounded-3xl skeleton" />
+      <div className="space-y-6">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+          <div className="h-7 w-32 rounded-md skeleton" />
+          <div className="h-9 w-32 rounded-full skeleton" />
+        </div>
+        <div className="h-10 w-56 rounded-full skeleton" />
+        <div className="space-y-8 pt-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex gap-5">
+              <div className="size-9 shrink-0 rounded-full skeleton" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-2/5 rounded-md skeleton" />
+                <div className="h-3 w-3/4 rounded-md skeleton" />
+                <div className="h-9 w-40 rounded-full skeleton" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeepLinkButton({
+  href,
+  children,
+  icon,
+}: {
+  href: string;
+  children: React.ReactNode;
+  icon?: React.ReactNode;
+}) {
+  const [showFallback, setShowFallback] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const onClick = () => {
+    setShowFallback(false);
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden" && timerRef.current) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility, { once: true });
+    timerRef.current = window.setTimeout(() => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      setShowFallback(true);
+      timerRef.current = null;
+    }, 1800);
+  };
+
+  return (
+    <div className="space-y-3">
+      <a
+        href={href}
+        onClick={onClick}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all duration-300 hover:scale-[1.02] hover:glow-strong active:scale-[0.98] sm:w-auto"
+      >
+        {icon}
+        {children}
+      </a>
+      <AnimatePresence>
+        {showFallback && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.25 }}
+            className="flex flex-col items-start gap-2 rounded-2xl border border-amber-300/20 bg-amber-300/[0.04] p-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:gap-3"
+          >
+            <span className="inline-flex items-center gap-2 text-amber-200/90">
+              <AlertCircle className="size-4 shrink-0" />
+              Не открылось? Похоже, приложение ещё не установлено.
+            </span>
+            <button
+              onClick={() => {
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  navigator.clipboard.writeText(SUBSCRIPTION_URL);
+                }
+                toast.success("Ссылка скопирована");
+              }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-foreground transition-colors hover:border-white/25 hover:bg-white/10"
+            >
+              <Copy className="size-3.5" />
+              Скопировать ссылку
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -456,35 +646,6 @@ function Step({
   );
 }
 
-function PrimaryAction({
-  children,
-  onClick,
-  href,
-  icon,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  href?: string;
-  icon?: React.ReactNode;
-}) {
-  const cls =
-    "inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-all duration-300 hover:scale-[1.02] hover:glow-strong active:scale-[0.98]";
-  if (href) {
-    return (
-      <a href={href} className={cls}>
-        {icon}
-        {children}
-      </a>
-    );
-  }
-  return (
-    <button onClick={onClick} className={cls}>
-      {icon}
-      {children}
-    </button>
-  );
-}
-
 function GhostAction({
   children,
   onClick,
@@ -499,7 +660,7 @@ function GhostAction({
   icon?: React.ReactNode;
 }) {
   const cls = cn(
-    "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-all duration-300 hover:scale-[1.02] hover:border-white/30 hover:bg-white/10",
+    "inline-flex w-full items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm transition-all duration-300 hover:scale-[1.02] hover:border-white/30 hover:bg-white/10 sm:w-auto sm:justify-start",
     active
       ? "border-white/40 bg-white/10 text-foreground glow-soft"
       : "border-white/10 bg-white/[0.03] text-muted-foreground hover:text-foreground",
@@ -532,7 +693,7 @@ function ClashSteps({ os }: { os: OS }) {
     <ol className="space-y-10">
       <Step index={1} title="Скачайте Clash Verge">
         <p>Выберите сборку для вашей платформы.</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {downloads.map((d) => (
             <GhostAction
               key={d.id}
@@ -556,14 +717,12 @@ function ClashSteps({ os }: { os: OS }) {
           Нажмите кнопку — приложение откроется и импортирует профиль
           автоматически.
         </p>
-        <div>
-          <PrimaryAction
-            href={`clash://install-config?url=${encodeURIComponent(SUBSCRIPTION_URL)}`}
-            icon={<Download className="size-4" />}
-          >
-            Добавить подписку
-          </PrimaryAction>
-        </div>
+        <DeepLinkButton
+          href={`clash://install-config?url=${encodeURIComponent(SUBSCRIPTION_URL)}`}
+          icon={<Download className="size-4" />}
+        >
+          Добавить подписку
+        </DeepLinkButton>
       </Step>
       <Step index={4} title="Не сработало? Импортируйте вручную">
         <p>
@@ -592,7 +751,7 @@ function HiddifySteps({ os }: { os: OS }) {
     <ol className="space-y-10">
       <Step index={1} title="Скачайте Hiddify">
         <p>Выберите сборку для вашей платформы.</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {downloads.map((d) => (
             <GhostAction
               key={d.id}
@@ -612,14 +771,12 @@ function HiddifySteps({ os }: { os: OS }) {
       </Step>
       <Step index={2} title="Добавьте подписку">
         <p>Откройте приложение и импортируйте профиль одной кнопкой.</p>
-        <div>
-          <PrimaryAction
-            href={`hiddify://install-config?url=${encodeURIComponent(SUBSCRIPTION_URL)}`}
-            icon={<Download className="size-4" />}
-          >
-            Добавить подписку
-          </PrimaryAction>
-        </div>
+        <DeepLinkButton
+          href={`hiddify://install-config?url=${encodeURIComponent(SUBSCRIPTION_URL)}`}
+          icon={<Download className="size-4" />}
+        >
+          Добавить подписку
+        </DeepLinkButton>
       </Step>
       <Step index={3} title="Подключитесь" last>
         <p>В приложении выберите сервер и нажмите основную кнопку подключения.</p>
