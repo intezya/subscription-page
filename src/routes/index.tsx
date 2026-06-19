@@ -15,13 +15,11 @@ import {
   Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
