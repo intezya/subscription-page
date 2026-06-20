@@ -49,7 +49,7 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type OS = "android" | "ios" | "macos" | "windows";
+type OS = "android" | "ios" | "linux" | "macos" | "windows";
 type Client =
   | "clash-meta"
   | "clash-mi"
@@ -79,6 +79,7 @@ type ClientGuide = {
 const OS_OPTIONS: { id: OS; label: string; icon: React.ReactNode }[] = [
   { id: "android", label: "Android", icon: <Smartphone className="size-4" /> },
   { id: "ios", label: "iOS", icon: <Apple className="size-4" /> },
+  { id: "linux", label: "Linux", icon: <Monitor className="size-4" /> },
   { id: "macos", label: "macOS", icon: <Apple className="size-4" /> },
   { id: "windows", label: "Windows", icon: <Monitor className="size-4" /> },
 ];
@@ -238,6 +239,126 @@ const CLIENTS_BY_OS: Record<OS, ClientGuide[]> = {
       ],
       connect:
         "На главной странице нажмите Disconnected, разрешите VPN-конфигурацию и введите пароль устройства.",
+    },
+  ],
+  linux: [
+    {
+      id: "flclashx",
+      label: "FlClashX",
+      deepLink: "flclashx://install-config?url=",
+      downloads: [
+        {
+          id: "amd64-deb",
+          label: "amd64 .deb",
+          href: "https://github.com/pluralplay/FlClashX/releases/download/v0.2.1/FlClashX-0.2.1-linux-amd64.deb",
+        },
+        {
+          id: "amd64-appimage",
+          label: "amd64 AppImage",
+          href: "https://github.com/pluralplay/FlClashX/releases/download/v0.2.1/FlClashX-0.2.1-linux-amd64.AppImage",
+        },
+        {
+          id: "amd64-rpm",
+          label: "amd64 .rpm",
+          href: "https://github.com/pluralplay/FlClashX/releases/download/v0.2.1/FlClashX-0.2.1-linux-amd64.rpm",
+        },
+        {
+          id: "arm64-deb",
+          label: "arm64 .deb",
+          href: "https://github.com/pluralplay/FlClashX/releases/download/v0.2.1/FlClashX-0.2.1-linux-arm64.deb",
+        },
+      ],
+      manualImport:
+        "Если подписка не добавилась, скопируйте ссылку. В FlClashX откройте Профили, нажмите +, выберите URL, вставьте ссылку и отправьте форму.",
+    },
+    {
+      id: "koala-clash",
+      label: "Koala Clash",
+      deepLink: "koala-clash://install-config?url=",
+      downloads: [
+        {
+          id: "amd64-deb",
+          label: "amd64 .deb",
+          href: "https://github.com/coolcoala/koala-clash/releases/download/1.3.1/Koala.Clash_amd64.deb",
+        },
+        {
+          id: "amd64-rpm",
+          label: "x86_64 .rpm",
+          href: "https://github.com/coolcoala/koala-clash/releases/download/1.3.1/Koala.Clash_x86_64.rpm",
+        },
+        {
+          id: "arm64-deb",
+          label: "arm64 .deb",
+          href: "https://github.com/coolcoala/koala-clash/releases/download/1.3.1/Koala.Clash_arm64.deb",
+        },
+        {
+          id: "arm64-rpm",
+          label: "aarch64 .rpm",
+          href: "https://github.com/coolcoala/koala-clash/releases/download/1.3.1/Koala.Clash_aarch64.rpm",
+        },
+      ],
+      warning:
+        "Если вы раньше использовали Clash Verge Rev, удалите его перед установкой Koala Clash.",
+      manualImport:
+        "Если подписка не добавилась, скопируйте ссылку. В Koala Clash откройте главную страницу, нажмите Add Profile, вставьте ссылку и нажмите Import.",
+    },
+    {
+      id: "prizrak-box",
+      label: "Prizrak-Box",
+      deepLink: "prizrak-box://install-config?url=",
+      downloads: [
+        {
+          id: "amd64-deb",
+          label: "amd64 .deb",
+          href: "https://github.com/legiz-ru/Prizrak-Box/releases/download/v1.0.20/linux-amd64.deb",
+        },
+        {
+          id: "amd64-rpm",
+          label: "amd64 .rpm",
+          href: "https://github.com/legiz-ru/Prizrak-Box/releases/download/v1.0.20/linux-amd64.rpm",
+        },
+        {
+          id: "arm64-deb",
+          label: "arm64 .deb",
+          href: "https://github.com/legiz-ru/Prizrak-Box/releases/download/v1.0.20/linux-arm64.deb",
+        },
+        {
+          id: "arm64-rpm",
+          label: "arm64 .rpm",
+          href: "https://github.com/legiz-ru/Prizrak-Box/releases/download/v1.0.20/linux-arm64.rpm",
+        },
+      ],
+      manualImport:
+        "Если подписка не добавилась, скопируйте ссылку. В Prizrak-Box откройте Profiles, нажмите +, вставьте ссылку и подтвердите.",
+    },
+    {
+      id: "clash-verge",
+      label: "Clash Verge",
+      deepLink: "clash://install-config?url=",
+      downloads: [
+        {
+          id: "amd64-deb",
+          label: "amd64 .deb",
+          href: "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.4.4-rc/Clash.Verge_2.4.4-rc_amd64.deb",
+        },
+        {
+          id: "x86-rpm",
+          label: "x86_64 .rpm",
+          href: "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.4.4-rc/Clash.Verge-2.4.4-rc-1.x86_64.rpm",
+        },
+        {
+          id: "arm64-deb",
+          label: "arm64 .deb",
+          href: "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.4.4-rc/Clash.Verge_2.4.4-rc_arm64.deb",
+        },
+        {
+          id: "aarch64-rpm",
+          label: "aarch64 .rpm",
+          href: "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.4.4-rc/Clash.Verge-2.4.4-rc-1.aarch64.rpm",
+        },
+      ],
+      manualImport:
+        "Если подписка не добавилась, скопируйте ссылку. В Clash Verge откройте Profiles, вставьте ссылку в поле импорта и нажмите Import.",
     },
   ],
   macos: [
