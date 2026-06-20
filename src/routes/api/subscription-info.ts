@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { getSubscriptionInfoFailureStatus } from "@/lib/remnawave-response";
 import { normalizeSubscriptionInfo } from "@/lib/subscription-info";
 import { getShortUuidFromSubscriptionInfoRequest } from "@/lib/subscription-url";
 
@@ -35,7 +36,10 @@ export const Route = createFileRoute("/api/subscription-info")({
         );
 
         if (!response.ok) {
-          return Response.json({ error: "Failed to fetch subscription info" }, { status: 502 });
+          return Response.json(
+            { error: "Failed to fetch subscription info" },
+            { status: getSubscriptionInfoFailureStatus(response.status) },
+          );
         }
 
         const payload = await response.json();
