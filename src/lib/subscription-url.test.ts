@@ -49,7 +49,7 @@ assert.equal(
 
 assert.equal(
   getSubscriptionUrlForShortUuid(
-    "https://subs.intezya.ru/RUo2sPJ9Tz5tmTNm",
+    "https://subs.intezya.ru/subscription/intezya/RUo2sPJ9Tz5tmTNm",
     "otherUserShortUuid",
     "https://subs.intezya.ru",
   ),

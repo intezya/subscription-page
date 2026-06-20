@@ -33,13 +33,15 @@ export function getSubscriptionUrlForShortUuid(
   if (!shortUuid) return subscriptionUrl;
 
   const trimmed = subscriptionUrl.trim();
-  const base = origin || "http://localhost";
-  const url = new URL(trimmed || "/", base);
   if (origin) {
-    const currentOriginUrl = new URL(origin);
-    url.protocol = currentOriginUrl.protocol;
-    url.host = currentOriginUrl.host;
+    const url = new URL(origin);
+    url.pathname = `/${encodeURIComponent(shortUuid)}`;
+    url.search = "";
+    url.hash = "";
+    return url.toString();
   }
+
+  const url = new URL(trimmed || "/", "http://localhost");
 
   const segments = url.pathname.split("/").filter(Boolean);
   if (segments.length === 0) {
