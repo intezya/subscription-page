@@ -737,13 +737,79 @@ function GhostAction({
   );
 }
 
+function getClashDownloads(os: OS): DownloadOption[] {
+  const downloads: Record<OS, DownloadOption[]> = {
+    android: [
+      {
+        id: "android-apk",
+        label: "Скачать APK",
+        href: "https://github.com/MetaCubeX/ClashMetaForAndroid/releases/download/v2.11.20/cmfa-2.11.20-meta-universal-release.apk",
+      },
+      {
+        id: "android-fdroid",
+        label: "F-Droid",
+        href: "https://f-droid.org/packages/com.github.metacubex.clash.meta/",
+      },
+    ],
+    ios: [
+      {
+        id: "ios-app-store",
+        label: "App Store",
+        href: "https://apps.apple.com/us/app/clash-mi/id6744321968",
+      },
+    ],
+    macos: [
+      {
+        id: "mac-intel",
+        label: "macOS Intel",
+        href: "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.4.4-rc/Clash.Verge_2.4.4-rc_x64.dmg",
+      },
+      {
+        id: "mac-as",
+        label: "macOS Apple Silicon",
+        href: "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.4.4-rc/Clash.Verge_2.4.4-rc_aarch64.dmg",
+      },
+    ],
+    windows: [
+      {
+        id: "win-x64",
+        label: "Windows",
+        href: "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.4.4-rc/Clash.Verge_2.4.4-rc_x64-setup.exe",
+      },
+      {
+        id: "win-arm",
+        label: "Windows ARM",
+        href: "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.4.4-rc/Clash.Verge_2.4.4-rc_arm64-setup.exe",
+      },
+    ],
+  };
+
+  return downloads[os];
+}
+
+function getHiddifyDownloads(os: OS): DownloadOption[] {
+  const downloads: Partial<Record<OS, DownloadOption[]>> = {
+    macos: [
+      {
+        id: "mac",
+        label: "macOS",
+        href: "https://github.com/hiddify/hiddify-app/releases/download/v2.5.7/Hiddify-MacOS.dmg",
+      },
+    ],
+    windows: [
+      {
+        id: "win",
+        label: "Windows",
+        href: "https://github.com/hiddify/hiddify-app/releases/download/v2.5.7/Hiddify-Windows-Setup-x64.exe",
+      },
+    ],
+  };
+
+  return downloads[os] ?? [];
+}
+
 function ClashSteps({ os, t }: { os: OS; t: Translation }) {
-  const downloads: { id: string; label: string; matchOs: OS[]; href: string }[] = [
-    { id: "win", label: "Windows", matchOs: ["windows"], href: "#" },
-    { id: "mac-intel", label: "macOS Intel", matchOs: ["macos"], href: "#" },
-    { id: "mac-as", label: "macOS Apple Silicon", matchOs: ["macos"], href: "#" },
-    { id: "linux", label: "Linux", matchOs: [], href: "#" },
-  ];
+  const downloads = getClashDownloads(os);
 
   return (
     <ol className="space-y-10">
@@ -751,12 +817,7 @@ function ClashSteps({ os, t }: { os: OS; t: Translation }) {
         <p>{t.chooseBuild}</p>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {downloads.map((d) => (
-            <GhostAction
-              key={d.id}
-              href={d.href}
-              active={d.matchOs.includes(os)}
-              icon={<Download className="size-4" />}
-            >
+            <GhostAction key={d.id} href={d.href} icon={<Download className="size-4" />}>
               {d.label}
             </GhostAction>
           ))}
@@ -795,23 +856,15 @@ function ClashSteps({ os, t }: { os: OS; t: Translation }) {
 }
 
 function HiddifySteps({ os, t }: { os: OS; t: Translation }) {
-  const downloads: { id: string; label: string; matchOs: OS[]; href: string }[] = [
-    { id: "win", label: "Windows", matchOs: ["windows"], href: "#" },
-    { id: "mac", label: "macOS", matchOs: ["macos"], href: "#" },
-    { id: "linux", label: "Linux", matchOs: [], href: "#" },
-  ];
+  const downloads = getHiddifyDownloads(os);
+
   return (
     <ol className="space-y-10">
       <Step index={1} title={t.hiddifyDownloadTitle}>
         <p>{t.chooseBuild}</p>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {downloads.map((d) => (
-            <GhostAction
-              key={d.id}
-              href={d.href}
-              active={d.matchOs.includes(os)}
-              icon={<Download className="size-4" />}
-            >
+            <GhostAction key={d.id} href={d.href} icon={<Download className="size-4" />}>
               {d.label}
             </GhostAction>
           ))}
