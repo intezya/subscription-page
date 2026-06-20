@@ -115,8 +115,10 @@ dispatch. It authenticates to `ghcr.io` with the built-in `GITHUB_TOKEN`, so no
 registry secret is required. It publishes tags from the branch/tag name, a
 `sha-<commit>` tag, and `latest` for the default branch.
 
-The workflow expects a root `Dockerfile`. If the file is missing, the workflow
-fails early at the `Check Dockerfile` step with a clear error.
+The image is built from the root `Dockerfile`. The Docker build sets
+`DOCKER_BUILD=true`, which makes `vite.config.ts` produce a Nitro `node-server`
+output under `.output`. The runtime image serves that output on `PORT`, defaulting
+to `3000`.
 
 ## Development
 
@@ -172,6 +174,8 @@ node_modules/.bin/tsc --noEmit
 
 | Path | Responsibility |
 | --- | --- |
+| `Dockerfile` | Multi-stage Node image for the server-rendered subscription page. |
+| `.dockerignore` | Keeps local build output and dependencies out of Docker build context. |
 | `src/routes/index.tsx` | Main subscription page UI. |
 | `src/routes/api/subscription-info.ts` | Server-only Remnawave subscription info proxy. |
 | `src/lib/mock-subscription-info.ts` | Static demo subscription data used by GitHub Pages builds. |

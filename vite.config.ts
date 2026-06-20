@@ -12,6 +12,7 @@ const githubPagesBase = getGithubPagesBase(
   process.env.GITHUB_PAGES === "true",
   process.env.GITHUB_REPOSITORY,
 );
+const dockerBuild = process.env.DOCKER_BUILD === "true";
 
 export default defineConfig({
   tanstackStart: {
@@ -19,6 +20,7 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: dockerBuild ? { preset: "node-server" } : undefined,
   vite: {
     base: githubPagesBase,
   },
