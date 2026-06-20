@@ -16,12 +16,15 @@ The frontend renders the UI from `src/routes/index.tsx`.
 Subscription card data is loaded through a local server route:
 
 ```text
-Browser -> GET /api/subscription-info -> Remnawave GET /api/sub/{shortUuid}/info
+Browser -> GET /api/subscription-info?shortUuid={shortUuid} -> Remnawave GET /api/sub/{shortUuid}/info
 ```
 
 The Remnawave API token is read only by `src/routes/api/subscription-info.ts`. Do not expose it as a `VITE_*` variable.
 
-The `shortUuid` is derived from the last path segment of `VITE_SUBSCRIPTION_URL`. There is no separate `REMNAWAVE_SUBSCRIPTION_SHORT_UUID` setting.
+For short subscription URLs such as `/<shortUuid>`, the `shortUuid` is read from
+the route and sent to `/api/subscription-info`. On `/`, the server falls back to
+the last path segment of `VITE_SUBSCRIPTION_URL`. There is no separate
+`REMNAWAVE_SUBSCRIPTION_SHORT_UUID` setting.
 
 ## Environment
 
@@ -36,7 +39,7 @@ Public UI variables:
 
 | Variable | Purpose |
 | --- | --- |
-| `VITE_SUBSCRIPTION_URL` | Public subscription URL shown, copied, and used for client import buttons. The last path segment is also used as `shortUuid` for `/api/subscription-info`. If this value is empty, subscription copy/import buttons are hidden. |
+| `VITE_SUBSCRIPTION_URL` | Public subscription URL fallback/template shown, copied, and used for client import buttons on `/`. On `/<shortUuid>`, the visible route replaces the last path segment for copy/import buttons and for `/api/subscription-info?shortUuid=...`. If this value is empty, subscription copy/import buttons are hidden on `/`. |
 | `VITE_PAGE_TITLE` | Header/title shown in the UI. Defaults to `Subscription`. |
 | `VITE_SUPPORT_URL` | Support link shown as the Telegram/support button. If this value is empty, the support button is hidden. |
 | `VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL` | Optional browser redirect URL used when subscription info cannot be loaded. If this value is empty, the page stays open and shows the subscription card with the failed-load state. |
@@ -65,7 +68,8 @@ VITE_USE_MOCK_SUBSCRIPTION_INFO=false
 
 ## Subscription Load Failure
 
-On page load, the browser requests `/api/subscription-info`. If the request fails because
+On page load, the browser requests `/api/subscription-info`; on short routes it
+uses `/api/subscription-info?shortUuid=<shortUuid>`. If the request fails because
 the subscription cannot be fetched from Remnawave, the page checks
 `VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL`.
 
