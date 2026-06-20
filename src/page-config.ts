@@ -1,3 +1,5 @@
+import { isEnabledEnvValue } from "@/lib/pages-build";
+
 function envValue(name: string, fallback: string) {
   const env = import.meta.env as Record<string, string | undefined>;
   if (Object.prototype.hasOwnProperty.call(env, name)) {
@@ -15,4 +17,7 @@ export const SUPPORT_URL = envValue("VITE_SUPPORT_URL", "https://t.me/");
 export const SUBSCRIPTION_NOT_FOUND_REDIRECT_URL = envValue(
   "VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL",
   "",
+);
+export const USE_MOCK_SUBSCRIPTION_INFO = isEnabledEnvValue(
+  envValue("VITE_USE_MOCK_SUBSCRIPTION_INFO", ""),
 );

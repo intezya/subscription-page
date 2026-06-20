@@ -40,6 +40,7 @@ Public UI variables:
 | `VITE_PAGE_TITLE` | Header/title shown in the UI. Defaults to `Subscription`. |
 | `VITE_SUPPORT_URL` | Support link shown as the Telegram/support button. If this value is empty, the support button is hidden. |
 | `VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL` | Optional browser redirect URL used when subscription info cannot be loaded. If this value is empty, the page stays open and shows the subscription card with the failed-load state. |
+| `VITE_USE_MOCK_SUBSCRIPTION_INFO` | Optional static/demo mode. Set to `true`, `1`, or `yes` to show bundled mock subscription data instead of calling `/api/subscription-info`. Used by the GitHub Pages workflow. |
 
 Optional variables:
 
@@ -59,6 +60,7 @@ VITE_SUBSCRIPTION_URL=https://vpn.example.com/subscription/user/abc123def456
 VITE_PAGE_TITLE=Intezya VPN
 VITE_SUPPORT_URL=https://t.me/support
 VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL=https://example.com/support/subscription-not-found
+VITE_USE_MOCK_SUBSCRIPTION_INFO=false
 ```
 
 ## Subscription Load Failure
@@ -70,6 +72,51 @@ the subscription cannot be fetched from Remnawave, the page checks
 - If the variable contains a URL, the browser navigates to that URL.
 - If the variable is empty or unset, the user remains on the page and the subscription
   card shows the failed-load state.
+
+## GitHub Pages
+
+The repository includes `.github/workflows/pages.yml` for a static GitHub Pages
+deployment. The workflow runs on pushes to `main` and on manual dispatch, builds
+the app with `npm run build`, and uploads `dist/client` through the official
+GitHub Pages artifact/deploy actions.
+
+TanStack Start normally builds a server-rendered app, so the Pages workflow also
+runs `node scripts/create-pages-index.mjs` after the build. That script creates
+static `index.html`, `404.html`, and `.nojekyll` files in `dist/client` around
+the generated client bundle.
+
+GitHub Pages cannot run the TanStack Start server route
+`/api/subscription-info`, so the workflow sets:
+
+```bash
+VITE_USE_MOCK_SUBSCRIPTION_INFO=true
+```
+
+In that mode the page shows bundled demo subscription data and does not call the
+server route. Normal non-Pages builds leave this variable unset and continue to
+load real Remnawave data through `/api/subscription-info`.
+
+For the repository site `https://intezya.github.io/subscription-page/`, the
+workflow also builds assets with the `/subscription-page/` base path. Before the
+first deployment, set the repository Pages source to **GitHub Actions** in
+GitHub repository settings.
+
+## Docker Image Publishing
+
+The repository includes `.github/workflows/docker.yml` for building and pushing a
+Docker image to GitHub Container Registry:
+
+```text
+ghcr.io/intezya/subscription-page
+```
+
+The workflow runs on pushes to `main`, version tags matching `v*`, and manual
+dispatch. It authenticates to `ghcr.io` with the built-in `GITHUB_TOKEN`, so no
+registry secret is required. It publishes tags from the branch/tag name, a
+`sha-<commit>` tag, and `latest` for the default branch.
+
+The workflow expects a root `Dockerfile`. If the file is missing, the workflow
+fails early at the `Check Dockerfile` step with a clear error.
 
 ## Development
 
@@ -109,6 +156,7 @@ Run focused assertion tests:
 
 ```bash
 node_modules/.bin/tsx src/lib/i18n.test.ts
+node_modules/.bin/tsx src/lib/pages-build.test.ts
 node_modules/.bin/tsx src/lib/subscription-info.test.ts
 node_modules/.bin/tsx src/lib/subscription-redirect.test.ts
 node_modules/.bin/tsx src/lib/subscription-url.test.ts
@@ -126,11 +174,14 @@ node_modules/.bin/tsc --noEmit
 | --- | --- |
 | `src/routes/index.tsx` | Main subscription page UI. |
 | `src/routes/api/subscription-info.ts` | Server-only Remnawave subscription info proxy. |
+| `src/lib/mock-subscription-info.ts` | Static demo subscription data used by GitHub Pages builds. |
+| `src/lib/pages-build.ts` | GitHub Pages base path and env-flag helpers. |
 | `src/lib/subscription-info.ts` | Normalizes Remnawave response into card data. |
 | `src/lib/subscription-redirect.ts` | Decides whether a failed subscription load should redirect the browser. |
 | `src/lib/subscription-url.ts` | Extracts `shortUuid` from `VITE_SUBSCRIPTION_URL`. |
 | `src/lib/i18n.ts` | UI translations. |
 | `src/page-config.ts` | Public page configuration from `VITE_*` env values. |
+| `scripts/create-pages-index.mjs` | Creates static Pages entry files around the TanStack Start client bundle. |
 
 ## Security Notes
 

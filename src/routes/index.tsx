@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LANGS, TRANSLATIONS, type Translation } from "@/lib/i18n";
 import type { LangCode } from "@/lib/i18n";
+import { MOCK_SUBSCRIPTION_INFO } from "@/lib/mock-subscription-info";
 import type { SubscriptionCardData } from "@/lib/subscription-info";
 import { getSubscriptionFailureRedirectUrl } from "@/lib/subscription-redirect";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ import {
   SUBSCRIPTION_NOT_FOUND_REDIRECT_URL,
   SUBSCRIPTION_URL,
   SUPPORT_URL,
+  USE_MOCK_SUBSCRIPTION_INFO,
 } from "@/page-config";
 
 export const Route = createFileRoute("/")({
@@ -485,6 +487,14 @@ function Index() {
 
   useEffect(() => {
     let cancelled = false;
+
+    if (USE_MOCK_SUBSCRIPTION_INFO) {
+      setSubscription(MOCK_SUBSCRIPTION_INFO);
+      setSubscriptionFailed(false);
+      return () => {
+        cancelled = true;
+      };
+    }
 
     fetch("/api/subscription-info", { cache: "no-store" })
       .then(async (response) => {
