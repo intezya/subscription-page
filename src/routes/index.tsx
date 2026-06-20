@@ -127,7 +127,7 @@ function Index() {
   const subscriptionSummary = subscription
     ? getExpirationText(subscription, t)
     : subscriptionFailed
-      ? t.subscriptionUnavailable
+      ? null
       : t.subscriptionLoading;
 
   return (
@@ -201,9 +201,11 @@ function Index() {
                     <div className="truncate text-base font-medium tracking-tight">
                       {subscriptionName}
                     </div>
-                    <div className="truncate text-sm text-muted-foreground">
-                      {subscriptionSummary}
-                    </div>
+                    {subscriptionSummary && (
+                      <div className="truncate text-sm text-muted-foreground">
+                        {subscriptionSummary}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <motion.div
