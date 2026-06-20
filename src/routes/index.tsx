@@ -18,6 +18,8 @@ import {
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LANGS, TRANSLATIONS, type Translation } from "@/lib/i18n";
+import type { LangCode } from "@/lib/i18n";
+import type { SubscriptionCardData } from "@/lib/subscription-info";
 import { cn } from "@/lib/utils";
 import { PAGE_TITLE, SUBSCRIPTION_URL, SUPPORT_URL } from "@/page-config";
 
@@ -41,6 +43,7 @@ export const Route = createFileRoute("/")({
 
 type OS = "android" | "ios" | "macos" | "windows";
 type Client = "clash" | "hiddify";
+type DownloadOption = { id: string; label: string; href: string };
 
 const OS_OPTIONS: { id: OS; label: string; icon: React.ReactNode }[] = [
   { id: "android", label: "Android", icon: <Smartphone className="size-4" /> },
@@ -48,6 +51,19 @@ const OS_OPTIONS: { id: OS; label: string; icon: React.ReactNode }[] = [
   { id: "macos", label: "macOS", icon: <Apple className="size-4" /> },
   { id: "windows", label: "Windows", icon: <Monitor className="size-4" /> },
 ];
+
+const CLIENTS_BY_OS: Record<OS, { id: Client; label: string }[]> = {
+  android: [{ id: "clash", label: "Clash Meta" }],
+  ios: [{ id: "clash", label: "Clash Mi" }],
+  macos: [
+    { id: "clash", label: "Clash Verge" },
+    { id: "hiddify", label: "Hiddify" },
+  ],
+  windows: [
+    { id: "clash", label: "Clash Verge" },
+    { id: "hiddify", label: "Hiddify" },
+  ],
+};
 
 function copyLink(message: string) {
   if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -64,6 +80,8 @@ function Index() {
   const [osOpen, setOsOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [subscription, setSubscription] = useState<SubscriptionCardData | null>(null);
+  const [subscriptionFailed, setSubscriptionFailed] = useState(false);
   const t = TRANSLATIONS[lang.code];
 
   useEffect(() => {
@@ -71,11 +89,46 @@ function Index() {
     return () => clearTimeout(t);
   }, []);
 
-  const usedGiB = 1.35;
-  const totalGiB = 10;
-  const usedPct = (usedGiB / totalGiB) * 100;
-  const resetDate = "02.07.2026";
-  const tone: "ok" | "warn" | "danger" = usedPct >= 95 ? "danger" : usedPct >= 80 ? "warn" : "ok";
+  useEffect(() => {
+    if (CLIENTS_BY_OS[os].some((it) => it.id === client)) return;
+    setClient(CLIENTS_BY_OS[os][0].id);
+  }, [client, os]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/subscription-info", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Failed to fetch subscription info");
+        return (await response.json()) as SubscriptionCardData;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setSubscription(data);
+        setSubscriptionFailed(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSubscriptionFailed(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const usagePercent = subscription?.usagePercent ?? 0;
+  const tone: "ok" | "warn" | "danger" =
+    usagePercent >= 95 ? "danger" : usagePercent >= 80 ? "warn" : "ok";
+  const isActive = subscription?.status === "ACTIVE" && subscription.daysLeft >= 0;
+  const subscriptionName =
+    subscription?.username ??
+    (subscriptionFailed ? t.subscriptionUnavailable : t.subscriptionLoading);
+  const subscriptionSummary = subscription
+    ? getExpirationText(subscription, t)
+    : subscriptionFailed
+      ? t.subscriptionUnavailable
+      : t.subscriptionLoading;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -145,8 +198,12 @@ function Index() {
                     <span className="absolute inset-0 rounded-full bg-white pulse-glow" />
                   </span>
                   <div className="min-w-0">
-                    <div className="truncate text-base font-medium tracking-tight">intezya</div>
-                    <div className="truncate text-sm text-muted-foreground">{t.expiresIn}</div>
+                    <div className="truncate text-base font-medium tracking-tight">
+                      {subscriptionName}
+                    </div>
+                    <div className="truncate text-sm text-muted-foreground">
+                      {subscriptionSummary}
+                    </div>
                   </div>
                 </div>
                 <motion.div
@@ -171,38 +228,52 @@ function Index() {
                   >
                     <div className="border-t border-white/10 px-5 py-5 sm:px-6">
                       <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                        <Field label={t.user} value="intezya" />
+                        <Field label={t.user} value={subscriptionName} />
                         <Field
                           label={t.status}
                           value={
                             <span className="inline-flex items-center gap-2">
-                              <span className="size-1.5 rounded-full bg-white" />
-                              {t.active}
+                              <span
+                                className={cn(
+                                  "size-1.5 rounded-full",
+                                  isActive ? "bg-white" : "bg-rose-400",
+                                )}
+                              />
+                              {isActive ? t.active : t.inactive}
                             </span>
                           }
                         />
-                        <Field label={t.expiresAt} value="02.02.2027" />
+                        <Field
+                          label={t.expiresAt}
+                          value={
+                            subscription
+                              ? formatSubscriptionDate(subscription.expiresAt, lang.code)
+                              : "—"
+                          }
+                        />
                       </div>
                       <div className="mt-6">
                         <div className="mb-2 flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            {t.traffic}
-                            <span className="ml-2 text-xs text-muted-foreground/70">
-                              {t.reset} {resetDate}
-                            </span>
-                          </span>
+                          <span className="text-muted-foreground">{t.traffic}</span>
                           <span className="tabular-nums">
-                            <span className="text-foreground">{usedGiB.toFixed(2)} GiB</span>
+                            <span className="text-foreground">
+                              {subscription?.trafficUsed ?? "—"}
+                            </span>
                             <span className="text-muted-foreground">
                               {" "}
-                              / {totalGiB.toFixed(2)} GiB
+                              /{" "}
+                              {subscription
+                                ? subscription.trafficLimitBytes == null
+                                  ? t.unlimitedTraffic
+                                  : subscription.trafficLimit
+                                : "—"}
                             </span>
                           </span>
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
                           <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${usedPct}%` }}
+                            animate={{ width: `${subscription?.usagePercent ?? 0}%` }}
                             transition={{ duration: 0.9, ease: [0.4, 0, 0.2, 1] }}
                             className={cn(
                               "h-full rounded-full transition-colors duration-500",
@@ -220,7 +291,7 @@ function Index() {
                             }}
                           />
                         </div>
-                        {tone !== "ok" && (
+                        {subscription?.usagePercent != null && tone !== "ok" && (
                           <div className="mt-2 text-xs text-muted-foreground">
                             {tone === "warn" ? t.quotaWarn : t.quotaDanger}
                           </div>
@@ -283,13 +354,13 @@ function Index() {
               </div>
 
               {/* Client toggle */}
-              <ClientToggle client={client} setClient={setClient} />
+              <ClientToggle os={os} client={client} setClient={setClient} />
 
               {/* Timeline */}
               <div className="mt-10">
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={client}
+                    key={`${os}-${client}`}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
@@ -531,11 +602,41 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-function ClientToggle({ client, setClient }: { client: Client; setClient: (c: Client) => void }) {
-  const items: { id: Client; label: string }[] = [
-    { id: "clash", label: "Clash Verge" },
-    { id: "hiddify", label: "Hiddify" },
-  ];
+function getExpirationText(subscription: SubscriptionCardData, t: Translation): string {
+  if (subscription.status !== "ACTIVE" || subscription.daysLeft < 0) return t.expired;
+  if (subscription.daysLeft === 0) return t.expiresToday;
+  return t.expiresInDays.replace("{days}", String(subscription.daysLeft));
+}
+
+function formatSubscriptionDate(value: string, lang: LangCode): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  const locales: Record<LangCode, string> = {
+    ru: "ru-RU",
+    en: "en-US",
+    es: "es-ES",
+    de: "de-DE",
+  };
+
+  return new Intl.DateTimeFormat(locales[lang], {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+function ClientToggle({
+  os,
+  client,
+  setClient,
+}: {
+  os: OS;
+  client: Client;
+  setClient: (c: Client) => void;
+}) {
+  const items = CLIENTS_BY_OS[os];
+
   return (
     <div className="relative inline-flex rounded-full border border-white/10 bg-white/5 p-1">
       {items.map((it) => {
