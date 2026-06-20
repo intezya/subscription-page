@@ -584,7 +584,7 @@ function copyLink(message: string) {
   toast.success(message);
 }
 
-function Index() {
+export function Index() {
   const [expanded, setExpanded] = useState(false);
   const [os, setOs] = useState<OS>("macos");
   const [client, setClient] = useState<Client>("clash-verge");

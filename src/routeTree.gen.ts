@@ -9,9 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ShortUuidRouteImport } from './routes/$shortUuid'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSubscriptionInfoRouteImport } from './routes/api/subscription-info'
 
+const ShortUuidRoute = ShortUuidRouteImport.update({
+  id: '/$shortUuid',
+  path: '/$shortUuid',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -25,32 +31,43 @@ const ApiSubscriptionInfoRoute = ApiSubscriptionInfoRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$shortUuid': typeof ShortUuidRoute
   '/api/subscription-info': typeof ApiSubscriptionInfoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$shortUuid': typeof ShortUuidRoute
   '/api/subscription-info': typeof ApiSubscriptionInfoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$shortUuid': typeof ShortUuidRoute
   '/api/subscription-info': typeof ApiSubscriptionInfoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/subscription-info'
+  fullPaths: '/' | '/$shortUuid' | '/api/subscription-info'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/subscription-info'
-  id: '__root__' | '/' | '/api/subscription-info'
+  to: '/' | '/$shortUuid' | '/api/subscription-info'
+  id: '__root__' | '/' | '/$shortUuid' | '/api/subscription-info'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ShortUuidRoute: typeof ShortUuidRoute
   ApiSubscriptionInfoRoute: typeof ApiSubscriptionInfoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/$shortUuid': {
+      id: '/$shortUuid'
+      path: '/$shortUuid'
+      fullPath: '/$shortUuid'
+      preLoaderRoute: typeof ShortUuidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ShortUuidRoute: ShortUuidRoute,
   ApiSubscriptionInfoRoute: ApiSubscriptionInfoRoute,
 }
 export const routeTree = rootRouteImport
