@@ -22,6 +22,7 @@ import { LANGS, TRANSLATIONS, type Translation } from "@/lib/i18n";
 import type { LangCode } from "@/lib/i18n";
 import { MOCK_SUBSCRIPTION_INFO } from "@/lib/mock-subscription-info";
 import type { RuntimePageConfig } from "@/lib/runtime-page-config";
+import { readSubscriptionInfoResponse, SubscriptionInfoFetchError } from "@/lib/subscription-fetch";
 import type { SubscriptionCardData } from "@/lib/subscription-info";
 import { getSubscriptionFailureRedirectUrl } from "@/lib/subscription-redirect";
 import { getSubscriptionInfoPath, getSubscriptionUrlForShortUuid } from "@/lib/subscription-url";
@@ -33,6 +34,7 @@ import {
   SUPPORT_URL,
   USE_MOCK_SUBSCRIPTION_INFO,
 } from "@/page-config";
+import { NotFoundComponent } from "./__root";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -597,6 +599,7 @@ export function Index({ shortUuid }: { shortUuid?: string }) {
   const [loaded, setLoaded] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionCardData | null>(null);
   const [subscriptionFailed, setSubscriptionFailed] = useState(false);
+  const [subscriptionNotFound, setSubscriptionNotFound] = useState(false);
   const [runtimeConfig, setRuntimeConfig] = useState<RuntimePageConfig | null>(null);
   const t = TRANSLATIONS[lang.code];
   const supportUrl = getClientSupportUrl(runtimeConfig, SUPPORT_URL);
@@ -645,23 +648,28 @@ export function Index({ shortUuid }: { shortUuid?: string }) {
     if (USE_MOCK_SUBSCRIPTION_INFO) {
       setSubscription(MOCK_SUBSCRIPTION_INFO);
       setSubscriptionFailed(false);
+      setSubscriptionNotFound(false);
       return () => {
         cancelled = true;
       };
     }
 
     fetch(subscriptionInfoPath, { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Failed to fetch subscription info");
-        return (await response.json()) as SubscriptionCardData;
-      })
+      .then(readSubscriptionInfoResponse)
       .then((data) => {
         if (cancelled) return;
         setSubscription(data);
         setSubscriptionFailed(false);
+        setSubscriptionNotFound(false);
       })
-      .catch(() => {
+      .catch((error) => {
         if (cancelled) return;
+        if (error instanceof SubscriptionInfoFetchError && error.status === 404) {
+          setSubscription(null);
+          setSubscriptionFailed(false);
+          setSubscriptionNotFound(true);
+          return;
+        }
         const redirectUrl = getSubscriptionFailureRedirectUrl(
           true,
           SUBSCRIPTION_NOT_FOUND_REDIRECT_URL,
@@ -677,6 +685,10 @@ export function Index({ shortUuid }: { shortUuid?: string }) {
       cancelled = true;
     };
   }, [subscriptionInfoPath]);
+
+  if (subscriptionNotFound) {
+    return <NotFoundComponent />;
+  }
 
   const usagePercent = subscription?.usagePercent ?? 0;
   const tone: "ok" | "warn" | "danger" =
