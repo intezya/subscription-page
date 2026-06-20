@@ -25,6 +25,7 @@ import type { RuntimePageConfig } from "@/lib/runtime-page-config";
 import { readSubscriptionInfoResponse, SubscriptionInfoFetchError } from "@/lib/subscription-fetch";
 import type { SubscriptionCardData } from "@/lib/subscription-info";
 import { getSubscriptionFailureRedirectUrl } from "@/lib/subscription-redirect";
+import { shouldRenderSubscriptionRootNotFound } from "@/lib/subscription-route";
 import { getSubscriptionInfoPath, getSubscriptionUrlForShortUuid } from "@/lib/subscription-url";
 import { cn } from "@/lib/utils";
 import {
@@ -601,6 +602,7 @@ export function Index({ shortUuid }: { shortUuid?: string }) {
   const [subscriptionFailed, setSubscriptionFailed] = useState(false);
   const [subscriptionNotFound, setSubscriptionNotFound] = useState(false);
   const [runtimeConfig, setRuntimeConfig] = useState<RuntimePageConfig | null>(null);
+  const rootNotFound = shouldRenderSubscriptionRootNotFound(shortUuid, USE_MOCK_SUBSCRIPTION_INFO);
   const t = TRANSLATIONS[lang.code];
   const supportUrl = getClientSupportUrl(runtimeConfig, SUPPORT_URL);
   const subscriptionUrl = getSubscriptionUrlForShortUuid(
@@ -645,6 +647,15 @@ export function Index({ shortUuid }: { shortUuid?: string }) {
   useEffect(() => {
     let cancelled = false;
 
+    if (rootNotFound) {
+      setSubscription(null);
+      setSubscriptionFailed(false);
+      setSubscriptionNotFound(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     if (USE_MOCK_SUBSCRIPTION_INFO) {
       setSubscription(MOCK_SUBSCRIPTION_INFO);
       setSubscriptionFailed(false);
@@ -684,9 +695,9 @@ export function Index({ shortUuid }: { shortUuid?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [subscriptionInfoPath]);
+  }, [rootNotFound, subscriptionInfoPath]);
 
-  if (subscriptionNotFound) {
+  if (rootNotFound || subscriptionNotFound) {
     return <NotFoundComponent />;
   }
 
