@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { getClientSupportUrl } from "@/lib/client-page-config";
 import { LANGS, TRANSLATIONS, type Translation } from "@/lib/i18n";
 import type { LangCode } from "@/lib/i18n";
 import { MOCK_SUBSCRIPTION_INFO } from "@/lib/mock-subscription-info";
@@ -598,7 +599,7 @@ export function Index({ shortUuid }: { shortUuid?: string }) {
   const [subscriptionFailed, setSubscriptionFailed] = useState(false);
   const [runtimeConfig, setRuntimeConfig] = useState<RuntimePageConfig | null>(null);
   const t = TRANSLATIONS[lang.code];
-  const supportUrl = runtimeConfig?.supportUrl ?? SUPPORT_URL;
+  const supportUrl = getClientSupportUrl(runtimeConfig, SUPPORT_URL);
   const subscriptionUrl = getSubscriptionUrlForShortUuid(
     SUBSCRIPTION_URL,
     shortUuid,
