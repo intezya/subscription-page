@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { normalizeSubscriptionInfo } from "@/lib/subscription-info";
+import { getShortUuidFromSubscriptionUrl } from "@/lib/subscription-url";
 
 const REMNAWAVE_REAL_IP_HEADER = "x-remnawave-real-ip";
 
@@ -10,13 +11,13 @@ export const Route = createFileRoute("/api/subscription-info")({
       GET: async ({ request }) => {
         const panelUrl = process.env.REMNAWAVE_PANEL_URL?.trim();
         const apiToken = process.env.REMNAWAVE_API_TOKEN?.trim();
-        const shortUuid = resolveShortUuid();
+        const shortUuid = getShortUuidFromSubscriptionUrl(process.env.VITE_SUBSCRIPTION_URL ?? "");
 
         if (!panelUrl || !apiToken || !shortUuid) {
           return Response.json(
             {
               error:
-                "REMNAWAVE_PANEL_URL, REMNAWAVE_API_TOKEN and REMNAWAVE_SUBSCRIPTION_SHORT_UUID are required",
+                "REMNAWAVE_PANEL_URL, REMNAWAVE_API_TOKEN and VITE_SUBSCRIPTION_URL are required",
             },
             { status: 500 },
           );
@@ -44,21 +45,6 @@ export const Route = createFileRoute("/api/subscription-info")({
     },
   },
 });
-
-function resolveShortUuid(): string | undefined {
-  const configured = process.env.REMNAWAVE_SUBSCRIPTION_SHORT_UUID?.trim();
-  if (configured) return configured;
-
-  const subscriptionUrl = process.env.VITE_SUBSCRIPTION_URL?.trim();
-  if (!subscriptionUrl) return undefined;
-
-  try {
-    const url = new URL(subscriptionUrl);
-    return url.pathname.split("/").filter(Boolean).at(-1);
-  } catch {
-    return subscriptionUrl.split("/").filter(Boolean).at(-1);
-  }
-}
 
 function getRemnawaveHeaders(request: Request, apiToken: string): Headers {
   const headers = new Headers({
