@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 import {
-  NOT_FOUND_REDIRECT_URL,
+  getNotFoundRedirectUrl,
   redirectNotFoundPath,
   type RedirectLocation,
 } from "./not-found-redirect.ts";
@@ -13,7 +13,10 @@ const location: RedirectLocation = {
   },
 };
 
-redirectNotFoundPath(location);
+assert.equal(getNotFoundRedirectUrl(" https://google.com "), "https://google.com");
+assert.equal(getNotFoundRedirectUrl(""), undefined);
+assert.equal(getNotFoundRedirectUrl("   "), undefined);
 
-assert.deepEqual(redirects, [NOT_FOUND_REDIRECT_URL]);
-assert.equal(NOT_FOUND_REDIRECT_URL, "https://google.com/");
+assert.equal(redirectNotFoundPath(location, "https://google.com"), true);
+assert.equal(redirectNotFoundPath(location, ""), false);
+assert.deepEqual(redirects, ["https://google.com"]);

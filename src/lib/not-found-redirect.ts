@@ -1,7 +1,13 @@
-export const NOT_FOUND_REDIRECT_URL = "https://google.com/";
-
 export type RedirectLocation = Pick<Location, "replace">;
 
-export function redirectNotFoundPath(location: RedirectLocation): void {
-  location.replace(NOT_FOUND_REDIRECT_URL);
+export function getNotFoundRedirectUrl(redirectUrl: string): string | undefined {
+  const value = redirectUrl.trim();
+  return value || undefined;
+}
+
+export function redirectNotFoundPath(location: RedirectLocation, redirectUrl: string): boolean {
+  const value = getNotFoundRedirectUrl(redirectUrl);
+  if (!value) return false;
+  location.replace(value);
+  return true;
 }

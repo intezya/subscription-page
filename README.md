@@ -55,6 +55,7 @@ Public UI variables:
 | `VITE_PAGE_TITLE` | Header/title shown in the UI. Defaults to `Subscription`. |
 | `VITE_SUPPORT_URL` | Build-time fallback support link shown as the Telegram/support button if runtime `SUPPORT_URL` is unset. |
 | `VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL` | Optional browser redirect URL used when subscription info cannot be loaded. If this value is empty, the page stays open and shows the subscription card with the failed-load state. |
+| `VITE_NOT_FOUND_REDIRECT_URL` | Optional browser redirect URL used for unmatched 404 routes such as `/`. If this value is empty, the built-in 404 page is shown. |
 | `VITE_USE_MOCK_SUBSCRIPTION_INFO` | Optional static/demo mode. Set to `true`, `1`, or `yes` to show bundled mock subscription data instead of calling `/api/subscription-info`. Used by the GitHub Pages workflow. |
 
 Optional variables:
@@ -76,6 +77,7 @@ VITE_SUBSCRIPTION_URL=https://vpn.example.com/subscription/user/abc123def456
 VITE_PAGE_TITLE=Intezya VPN
 SUPPORT_URL=https://t.me/support
 VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL=https://example.com/support/subscription-not-found
+VITE_NOT_FOUND_REDIRECT_URL=https://example.com/
 VITE_USE_MOCK_SUBSCRIPTION_INFO=false
 ```
 
@@ -89,6 +91,12 @@ the subscription cannot be fetched from Remnawave, the page checks
 - If the variable contains a URL, the browser navigates to that URL.
 - If the variable is empty or unset, the user remains on the page and the subscription
   card shows the failed-load state.
+
+## Route Not Found Redirect
+
+Unmatched browser routes, including `/` when root rendering is disabled, use the
+root 404 component. If `VITE_NOT_FOUND_REDIRECT_URL` contains a URL, the browser
+navigates to that URL. If it is empty or unset, the original 404 page is shown.
 
 ## GitHub Pages
 
@@ -177,6 +185,7 @@ Run focused assertion tests:
 node_modules/.bin/tsx src/lib/i18n.test.ts
 node_modules/.bin/tsx src/lib/pages-build.test.ts
 node_modules/.bin/tsx src/lib/subscription-info.test.ts
+node_modules/.bin/tsx src/lib/not-found-redirect.test.ts
 node_modules/.bin/tsx src/lib/subscription-redirect.test.ts
 node_modules/.bin/tsx src/lib/subscription-passthrough.test.ts
 node_modules/.bin/tsx src/lib/subscription-url.test.ts
@@ -198,6 +207,7 @@ node_modules/.bin/tsc --noEmit
 | `src/routes/api/subscription-info.ts` | Server-only Remnawave subscription info proxy. |
 | `src/lib/mock-subscription-info.ts` | Static demo subscription data used by GitHub Pages builds. |
 | `src/lib/pages-build.ts` | GitHub Pages base path and env-flag helpers. |
+| `src/lib/not-found-redirect.ts` | Decides whether unmatched 404 routes should redirect the browser. |
 | `src/lib/subscription-passthrough.ts` | Proxies non-browser short subscription URL requests to Remnawave. |
 | `src/lib/subscription-info.ts` | Normalizes Remnawave response into card data. |
 | `src/lib/subscription-redirect.ts` | Decides whether a failed subscription load should redirect the browser. |
