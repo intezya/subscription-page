@@ -7,20 +7,54 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { getClientNotFoundRedirectUrl } from "../lib/client-page-config";
 import { getNotFoundRedirectUrl, redirectNotFoundPath } from "../lib/not-found-redirect";
+import type { RuntimePageConfig } from "../lib/runtime-page-config";
 import { Toaster } from "@/components/ui/sonner";
 import { NOT_FOUND_REDIRECT_URL, PAGE_TITLE } from "@/page-config";
 
 export function NotFoundComponent() {
-  const redirectUrl = getNotFoundRedirectUrl(NOT_FOUND_REDIRECT_URL);
+  const [runtimeConfig, setRuntimeConfig] = useState<RuntimePageConfig | null | undefined>(
+    undefined,
+  );
+  const redirectUrl =
+    runtimeConfig === undefined
+      ? undefined
+      : getNotFoundRedirectUrl(getClientNotFoundRedirectUrl(runtimeConfig, NOT_FOUND_REDIRECT_URL));
 
   useEffect(() => {
-    redirectNotFoundPath(window.location, NOT_FOUND_REDIRECT_URL);
+    let cancelled = false;
+
+    fetch("/api/page-config", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Failed to fetch page config");
+        return (await response.json()) as RuntimePageConfig;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setRuntimeConfig(data);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRuntimeConfig(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    if (runtimeConfig === undefined) return;
+    redirectNotFoundPath(
+      window.location,
+      getClientNotFoundRedirectUrl(runtimeConfig, NOT_FOUND_REDIRECT_URL),
+    );
+  }, [runtimeConfig]);
 
   if (!redirectUrl) {
     return (

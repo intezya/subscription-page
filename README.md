@@ -35,7 +35,8 @@ subscription URL that opens the web page in a browser.
 
 For short subscription URLs such as `/<shortUuid>`, the `shortUuid` is read from
 the route and sent to `/api/subscription-info`. On `/`, the server falls back to
-the last path segment of `VITE_SUBSCRIPTION_URL`. There is no separate
+the last path segment of `SUBSCRIPTION_URL`, falling back to
+`VITE_SUBSCRIPTION_URL`. There is no separate
 `REMNAWAVE_SUBSCRIPTION_SHORT_UUID` setting.
 
 ## Environment
@@ -51,11 +52,11 @@ Public UI variables:
 
 | Variable | Purpose |
 | --- | --- |
-| `VITE_SUBSCRIPTION_URL` | Public subscription URL fallback/template shown, copied, and used for client import buttons on `/`. On `/<shortUuid>`, the visible route replaces the last path segment for copy/import buttons and for `/api/subscription-info?shortUuid=...`. If this value is empty, subscription copy/import buttons are hidden on `/`. |
+| `VITE_SUBSCRIPTION_URL` | Build-time fallback public subscription URL/template shown, copied, and used for client import buttons on `/` when runtime `SUBSCRIPTION_URL` is unset. On `/<shortUuid>`, the visible route replaces the last path segment for copy/import buttons and for `/api/subscription-info?shortUuid=...`. If both values are empty, subscription copy/import buttons are hidden on `/`. |
 | `VITE_PAGE_TITLE` | Header/title shown in the UI. Defaults to `Subscription`. |
 | `VITE_SUPPORT_URL` | Build-time fallback support link shown as the Telegram/support button if runtime `SUPPORT_URL` is unset. |
-| `VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL` | Optional browser redirect URL used when subscription info cannot be loaded. If this value is empty, the page stays open and shows the subscription card with the failed-load state. |
-| `VITE_NOT_FOUND_REDIRECT_URL` | Optional browser redirect URL used for unmatched 404 routes such as `/`. If this value is empty, the built-in 404 page is shown. |
+| `VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL` | Build-time fallback browser redirect URL used when subscription info cannot be loaded and runtime `SUBSCRIPTION_NOT_FOUND_REDIRECT_URL` is unset. If both values are empty, the page stays open and shows the subscription card with the failed-load state. |
+| `VITE_NOT_FOUND_REDIRECT_URL` | Build-time fallback browser redirect URL used for unmatched 404 routes when runtime `NOT_FOUND_REDIRECT_URL` is unset. If both values are empty, the built-in 404 page is shown. |
 | `VITE_USE_MOCK_SUBSCRIPTION_INFO` | Optional static/demo mode. Set to `true`, `1`, or `yes` to show bundled mock subscription data instead of calling `/api/subscription-info`. Used by the GitHub Pages workflow. |
 
 Optional variables:
@@ -63,6 +64,9 @@ Optional variables:
 | Variable | Purpose |
 | --- | --- |
 | `SUPPORT_URL` | Runtime support link shown as the Telegram/support button. Preferred for Docker/Dokploy because it is read from the running container environment through `/api/page-config`. If both `SUPPORT_URL` and `VITE_SUPPORT_URL` are empty, the support button is hidden. |
+| `SUBSCRIPTION_URL` | Runtime public subscription URL/template shown, copied, and used as the server fallback for `/api/subscription-info` on `/`. Preferred over `VITE_SUBSCRIPTION_URL`. |
+| `SUBSCRIPTION_NOT_FOUND_REDIRECT_URL` | Runtime browser redirect URL used when subscription info cannot be loaded. Preferred over `VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL`. |
+| `NOT_FOUND_REDIRECT_URL` | Runtime browser redirect URL used for unmatched 404 routes. Preferred over `VITE_NOT_FOUND_REDIRECT_URL`. |
 | `CADDY_AUTH_API_TOKEN` | Optional `X-Api-Key` header for protected panel access. |
 | `CLOUDFLARE_ZERO_TRUST_CLIENT_ID` | Optional Cloudflare Access client id. |
 | `CLOUDFLARE_ZERO_TRUST_CLIENT_SECRET` | Optional Cloudflare Access client secret. |
@@ -76,25 +80,28 @@ them in a running Docker/Dokploy container does not affect the already-built UI;
 rebuild and redeploy the image after changing a `VITE_*` value.
 
 Server-side variables without the `VITE_` prefix are read by the running server
-process. In this app, `SUPPORT_URL` is the only UI-facing runtime override: the
-browser fetches it from `/api/page-config`, so it can be changed in the container
-environment without rebuilding the image. `VITE_SUPPORT_URL` remains only a
-build-time fallback.
+process. In this app, `SUPPORT_URL`, `SUBSCRIPTION_URL`,
+`SUBSCRIPTION_NOT_FOUND_REDIRECT_URL`, and `NOT_FOUND_REDIRECT_URL` are runtime
+overrides: the browser fetches public UI values from `/api/page-config`, and
+server routes read the same running process environment. They can be changed in
+the container environment without rebuilding the image. Their `VITE_*`
+counterparts remain build-time fallbacks and are useful for static builds or as
+image defaults.
 
-`VITE_NOT_FOUND_REDIRECT_URL` and
-`VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL` are currently build-time settings. To
-change either redirect in production, set the value before building the image.
+`VITE_PAGE_TITLE` and `VITE_USE_MOCK_SUBSCRIPTION_INFO` remain build-time
+settings. To change those in production, set the value before building the image
+and redeploy it.
 
 Example:
 
 ```bash
 REMNAWAVE_PANEL_URL=https://panel.example.com
 REMNAWAVE_API_TOKEN=remnawave_api_token
-VITE_SUBSCRIPTION_URL=https://vpn.example.com/subscription/user/abc123def456
+SUBSCRIPTION_URL=https://vpn.example.com/subscription/user/abc123def456
 VITE_PAGE_TITLE=Intezya VPN
 SUPPORT_URL=https://t.me/support
-VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL=https://example.com/support/subscription-not-found
-VITE_NOT_FOUND_REDIRECT_URL=https://example.com/
+SUBSCRIPTION_NOT_FOUND_REDIRECT_URL=https://example.com/support/subscription-not-found
+NOT_FOUND_REDIRECT_URL=https://example.com/
 VITE_USE_MOCK_SUBSCRIPTION_INFO=false
 ```
 
@@ -103,6 +110,7 @@ VITE_USE_MOCK_SUBSCRIPTION_INFO=false
 On page load, the browser requests `/api/subscription-info`; on short routes it
 uses `/api/subscription-info?shortUuid=<shortUuid>`. If the request fails because
 the subscription cannot be fetched from Remnawave, the page checks
+`SUBSCRIPTION_NOT_FOUND_REDIRECT_URL`, then falls back to
 `VITE_SUBSCRIPTION_NOT_FOUND_REDIRECT_URL`.
 
 - If the variable contains a URL, the browser navigates to that URL.
@@ -112,8 +120,10 @@ the subscription cannot be fetched from Remnawave, the page checks
 ## Route Not Found Redirect
 
 Unmatched browser routes, including `/` when root rendering is disabled, use the
-root 404 component. If `VITE_NOT_FOUND_REDIRECT_URL` contains a URL, the browser
-navigates to that URL. If it is empty or unset, the original 404 page is shown.
+root 404 component. If `NOT_FOUND_REDIRECT_URL` contains a URL, the browser
+navigates to that URL. If it is empty or unset, the page falls back to
+`VITE_NOT_FOUND_REDIRECT_URL`; if both values are empty, the original 404 page is
+shown.
 
 ## GitHub Pages
 
@@ -228,7 +238,7 @@ node_modules/.bin/tsc --noEmit
 | `src/lib/subscription-passthrough.ts` | Proxies non-browser short subscription URL requests to Remnawave. |
 | `src/lib/subscription-info.ts` | Normalizes Remnawave response into card data. |
 | `src/lib/subscription-redirect.ts` | Decides whether a failed subscription load should redirect the browser. |
-| `src/lib/subscription-url.ts` | Extracts `shortUuid` from `VITE_SUBSCRIPTION_URL`. |
+| `src/lib/subscription-url.ts` | Extracts `shortUuid` from the configured subscription URL. |
 | `src/lib/i18n.ts` | UI translations. |
 | `src/page-config.ts` | Public page configuration from `VITE_*` env values. |
 | `scripts/create-pages-index.mjs` | Creates static Pages entry files around the TanStack Start client bundle. |

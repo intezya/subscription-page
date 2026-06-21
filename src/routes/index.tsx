@@ -17,7 +17,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { getClientSupportUrl } from "@/lib/client-page-config";
+import {
+  getClientSubscriptionUrl,
+  getClientSubscriptionNotFoundRedirectUrl,
+  getClientSupportUrl,
+} from "@/lib/client-page-config";
 import { detectOSFromClientHints, type DeviceOS } from "@/lib/device-os";
 import { LANGS, TRANSLATIONS, type Translation } from "@/lib/i18n";
 import type { LangCode } from "@/lib/i18n";
@@ -607,12 +611,19 @@ export function Index({ shortUuid }: { shortUuid?: string }) {
   const [subscription, setSubscription] = useState<SubscriptionCardData | null>(null);
   const [subscriptionFailed, setSubscriptionFailed] = useState(false);
   const [subscriptionNotFound, setSubscriptionNotFound] = useState(false);
-  const [runtimeConfig, setRuntimeConfig] = useState<RuntimePageConfig | null>(null);
+  const [runtimeConfig, setRuntimeConfig] = useState<RuntimePageConfig | null | undefined>(
+    undefined,
+  );
   const rootNotFound = shouldRenderSubscriptionRootNotFound(shortUuid, USE_MOCK_SUBSCRIPTION_INFO);
   const t = TRANSLATIONS[lang.code];
   const supportUrl = getClientSupportUrl(runtimeConfig, SUPPORT_URL);
+  const runtimeSubscriptionUrl = getClientSubscriptionUrl(runtimeConfig, SUBSCRIPTION_URL);
+  const subscriptionNotFoundRedirectUrl = getClientSubscriptionNotFoundRedirectUrl(
+    runtimeConfig,
+    SUBSCRIPTION_NOT_FOUND_REDIRECT_URL,
+  );
   const subscriptionUrl = getSubscriptionUrlForShortUuid(
-    SUBSCRIPTION_URL,
+    runtimeSubscriptionUrl,
     shortUuid,
     typeof window === "undefined" ? undefined : window.location.origin,
   );
@@ -685,6 +696,12 @@ export function Index({ shortUuid }: { shortUuid?: string }) {
       };
     }
 
+    if (runtimeConfig === undefined) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
     fetch(subscriptionInfoPath, { cache: "no-store" })
       .then(readSubscriptionInfoResponse)
       .then((data) => {
@@ -703,7 +720,7 @@ export function Index({ shortUuid }: { shortUuid?: string }) {
         }
         const redirectUrl = getSubscriptionFailureRedirectUrl(
           true,
-          SUBSCRIPTION_NOT_FOUND_REDIRECT_URL,
+          subscriptionNotFoundRedirectUrl,
         );
         if (redirectUrl) {
           window.location.assign(redirectUrl);
@@ -715,7 +732,7 @@ export function Index({ shortUuid }: { shortUuid?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [rootNotFound, subscriptionInfoPath]);
+  }, [rootNotFound, runtimeConfig, subscriptionInfoPath, subscriptionNotFoundRedirectUrl]);
 
   if (rootNotFound || subscriptionNotFound) {
     return <NotFoundComponent />;

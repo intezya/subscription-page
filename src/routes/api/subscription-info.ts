@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { getSubscriptionInfoFailureStatus } from "@/lib/remnawave-response";
+import { getRuntimeSubscriptionUrl } from "@/lib/runtime-page-config";
 import { normalizeSubscriptionInfo } from "@/lib/subscription-info";
 import { getShortUuidFromSubscriptionInfoRequest } from "@/lib/subscription-url";
 
@@ -14,14 +15,13 @@ export const Route = createFileRoute("/api/subscription-info")({
         const apiToken = process.env.REMNAWAVE_API_TOKEN?.trim();
         const shortUuid = getShortUuidFromSubscriptionInfoRequest(
           request.url,
-          process.env.VITE_SUBSCRIPTION_URL ?? "",
+          getRuntimeSubscriptionUrl(process.env),
         );
 
         if (!panelUrl || !apiToken || !shortUuid) {
           return Response.json(
             {
-              error:
-                "REMNAWAVE_PANEL_URL, REMNAWAVE_API_TOKEN and VITE_SUBSCRIPTION_URL are required",
+              error: "REMNAWAVE_PANEL_URL, REMNAWAVE_API_TOKEN and SUBSCRIPTION_URL are required",
             },
             { status: 500 },
           );

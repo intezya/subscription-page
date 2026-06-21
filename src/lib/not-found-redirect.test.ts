@@ -9,7 +9,7 @@ import {
 const redirects: string[] = [];
 const location: RedirectLocation = {
   replace(url) {
-    redirects.push(url);
+    redirects.push(String(url));
   },
 };
 
