@@ -5,7 +5,7 @@ Minimal VPN subscription landing page built with TanStack Start, React, Vite, Ta
 The page is intended to be served as a branded subscription helper:
 
 - show current subscription status and traffic from Remnawave;
-- copy or import the subscription link into supported clients;
+- copy, import, and serve the subscription link for supported clients;
 - provide platform-specific download links;
 - keep Remnawave API credentials on the server side only.
 
@@ -13,13 +13,25 @@ The page is intended to be served as a branded subscription helper:
 
 The frontend renders the UI from `src/routes/index.tsx`.
 
-Subscription card data is loaded through a local server route:
+For browser requests, subscription card data is loaded through a local server route:
 
 ```text
 Browser -> GET /api/subscription-info?shortUuid={shortUuid} -> Remnawave GET /api/sub/{shortUuid}/info
 ```
 
 The Remnawave API token is read only by `src/routes/api/subscription-info.ts`. Do not expose it as a `VITE_*` variable.
+
+For VPN client requests, short subscription URLs are proxied before the React page
+renders:
+
+```text
+VPN client -> GET /{shortUuid} -> Remnawave GET /api/sub/{shortUuid}
+VPN client -> GET /{shortUuid}/{clientType} -> Remnawave GET /api/sub/{shortUuid}/{clientType}
+```
+
+The server keeps Remnawave response headers such as `subscription-userinfo`,
+`profile-title`, and `routing`, so clients like Happ can import the same
+subscription URL that opens the web page in a browser.
 
 For short subscription URLs such as `/<shortUuid>`, the `shortUuid` is read from
 the route and sent to `/api/subscription-info`. On `/`, the server falls back to
@@ -166,6 +178,7 @@ node_modules/.bin/tsx src/lib/i18n.test.ts
 node_modules/.bin/tsx src/lib/pages-build.test.ts
 node_modules/.bin/tsx src/lib/subscription-info.test.ts
 node_modules/.bin/tsx src/lib/subscription-redirect.test.ts
+node_modules/.bin/tsx src/lib/subscription-passthrough.test.ts
 node_modules/.bin/tsx src/lib/subscription-url.test.ts
 ```
 
@@ -185,6 +198,7 @@ node_modules/.bin/tsc --noEmit
 | `src/routes/api/subscription-info.ts` | Server-only Remnawave subscription info proxy. |
 | `src/lib/mock-subscription-info.ts` | Static demo subscription data used by GitHub Pages builds. |
 | `src/lib/pages-build.ts` | GitHub Pages base path and env-flag helpers. |
+| `src/lib/subscription-passthrough.ts` | Proxies non-browser short subscription URL requests to Remnawave. |
 | `src/lib/subscription-info.ts` | Normalizes Remnawave response into card data. |
 | `src/lib/subscription-redirect.ts` | Decides whether a failed subscription load should redirect the browser. |
 | `src/lib/subscription-url.ts` | Extracts `shortUuid` from `VITE_SUBSCRIPTION_URL`. |
