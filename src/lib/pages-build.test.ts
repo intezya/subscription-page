@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 
 import { getGithubPagesBase, getRouterBasepath, isEnabledEnvValue } from "./pages-build.ts";
 
-assert.equal(getGithubPagesBase(false, "intezya/subscription-page"), undefined);
-assert.equal(getGithubPagesBase(true, "intezya/subscription-page"), "/subscription-page/");
+assert.equal(getGithubPagesBase(false, "shadowgatevpn/subscription-page"), undefined);
+assert.equal(getGithubPagesBase(true, "shadowgatevpn/subscription-page"), "/subscription-page/");
 assert.equal(getGithubPagesBase(true, ""), undefined);
 
 assert.equal(getRouterBasepath("/"), "/");

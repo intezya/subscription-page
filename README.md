@@ -148,7 +148,7 @@ In that mode the page shows bundled demo subscription data and does not call the
 server route. Normal non-Pages builds leave this variable unset and continue to
 load real Remnawave data through `/api/subscription-info`.
 
-For the repository site `https://intezya.github.io/subscription-page/`, the
+For the repository site `https://shadowgatevpn.github.io/subscription-page/`, the
 workflow also builds assets with the `/subscription-page/` base path. Before the
 first deployment, set the repository Pages source to **GitHub Actions** in
 GitHub repository settings.
@@ -159,7 +159,7 @@ The repository includes `.github/workflows/docker.yml` for building and pushing 
 Docker image to GitHub Container Registry:
 
 ```text
-ghcr.io/intezya/subscription-page
+ghcr.io/shadowgatevpn/subscription-page
 ```
 
 The workflow runs on pushes to `main`, version tags matching `v*`, and manual
