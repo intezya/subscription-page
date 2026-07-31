@@ -39,6 +39,21 @@ the last path segment of `SUBSCRIPTION_URL`, falling back to
 `VITE_SUBSCRIPTION_URL`. There is no separate
 `REMNAWAVE_SUBSCRIPTION_SHORT_UUID` setting.
 
+## Raw Subscription URL
+
+Use the local `raw` suffix when a client must receive the standard Base64
+subscription instead of an automatically selected JSON or YAML format:
+
+```text
+https://subs.example.com/<shortUuid>/raw
+```
+
+The subscription page handles `raw` locally. It requests the base Remnawave
+subscription endpoint without forwarding `/raw` as a client type and uses a
+neutral upstream user agent so Remnawave selects its `XRAY_BASE64` fallback.
+The ordinary `/<shortUuid>` URL keeps its existing browser and client-specific
+format selection.
+
 ## Environment
 
 Required server-side variables:

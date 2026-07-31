@@ -66,16 +66,23 @@ export function getSubscriptionPassthroughRequest(
   if (!shortUuid || extra) return null;
   if (shortUuid === "api" || shortUuid === "assets" || shortUuid === "src") return null;
   if (shortUuid.includes(".")) return null;
-  if (isBrowserUserAgent(request.headers.get("user-agent"))) return null;
 
+  let decodedShortUuid: string;
+  let decodedClientType: string | undefined;
   try {
-    return {
-      shortUuid: decodeURIComponent(shortUuid),
-      clientType: clientType ? decodeURIComponent(clientType) : undefined,
-    };
+    decodedShortUuid = decodeURIComponent(shortUuid);
+    decodedClientType = clientType ? decodeURIComponent(clientType) : undefined;
   } catch {
     return null;
   }
+
+  const forceRaw = decodedClientType === "raw";
+  if (!forceRaw && isBrowserUserAgent(request.headers.get("user-agent"))) return null;
+
+  return {
+    shortUuid: decodedShortUuid,
+    clientType: decodedClientType,
+  };
 }
 
 export function getUpstreamSubscriptionUrl(
@@ -91,6 +98,7 @@ export function getUpstreamSubscriptionUrl(
 export async function handleSubscriptionPassthrough(request: Request): Promise<Response | null> {
   const subscriptionRequest = getSubscriptionPassthroughRequest(request);
   if (!subscriptionRequest) return null;
+  const forceRaw = subscriptionRequest.clientType === "raw";
 
   const panelUrl = process.env.REMNAWAVE_PANEL_URL?.trim();
   const apiToken = process.env.REMNAWAVE_API_TOKEN?.trim();
@@ -106,10 +114,10 @@ export async function handleSubscriptionPassthrough(request: Request): Promise<R
     getUpstreamSubscriptionUrl(
       panelUrl,
       subscriptionRequest.shortUuid,
-      subscriptionRequest.clientType,
+      forceRaw ? undefined : subscriptionRequest.clientType,
     ),
     {
-      headers: getRemnawavePassthroughHeaders(request, apiToken),
+      headers: getRemnawavePassthroughHeaders(request, apiToken, forceRaw),
       cache: "no-store",
     },
   );
@@ -120,7 +128,11 @@ export async function handleSubscriptionPassthrough(request: Request): Promise<R
   });
 }
 
-function getRemnawavePassthroughHeaders(request: Request, apiToken: string): Headers {
+function getRemnawavePassthroughHeaders(
+  request: Request,
+  apiToken: string,
+  forceRaw = false,
+): Headers {
   const headers = new Headers();
 
   request.headers.forEach((value, key) => {
@@ -129,8 +141,13 @@ function getRemnawavePassthroughHeaders(request: Request, apiToken: string): Hea
     }
   });
 
-  if (!headers.has("accept")) headers.set("Accept", "*/*");
-  if (!headers.has("user-agent")) headers.set("user-agent", "Remnawave Subscription Page");
+  if (forceRaw) {
+    headers.set("Accept", "*/*");
+    headers.set("user-agent", "Remnawave Subscription Page Raw");
+  } else {
+    if (!headers.has("accept")) headers.set("Accept", "*/*");
+    if (!headers.has("user-agent")) headers.set("user-agent", "Remnawave Subscription Page");
+  }
   headers.set("Authorization", `Bearer ${apiToken}`);
   headers.set(REMNAWAVE_REAL_IP_HEADER, getClientIp(request));
 
